@@ -1,13 +1,11 @@
+import gc
+
+import datasets
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-import datasets
-from transformer_lens import HookedTransformer
 from tqdm.autonotebook import tqdm
-from multiprocessing import Pool
-import gc
-
-from aelib.utils import truncate_seq
+from transformer_lens import HookedTransformer
 
 
 class GradBufferConfig:
@@ -26,7 +24,7 @@ class GradBufferConfig:
             act_size=None,
             shuffle_buffer=True,
             seed=None,
-            device="cuda",
+            device='cuda',
             dtype=torch.float32,
             buffer_device=None,
             offload_device=None,
@@ -57,13 +55,13 @@ class GradBufferConfig:
         :param refresh_progress: If True, a progress bar will be displayed when refreshing the buffer
         """
 
-        assert isinstance(layers, list) and len(layers) > 0, "layers must be a non-empty list of ints"
+        assert isinstance(layers, list) and len(layers) > 0, "Layers must be a non-empty list of ints"
 
         self.model_name = model_name
         self.layers = layers
         self.dataset_name = dataset_name
-        self.act_sites = ("hook_mlp_out", "hook_attn_out")
-        self.act_names = [f"blocks.{layer}.{site}" for layer in layers for site in self.act_sites]
+        self.act_sites = ('hook_mlp_out', 'hook_attn_out')
+        self.act_names = [f'blocks.{layer}.{site}' for layer in layers for site in self.act_sites]
         self.dataset_split = dataset_split
         self.dataset_config = dataset_config
         self.buffer_size = buffer_size
@@ -123,7 +121,7 @@ class GradBuffer:
         self.cfg.act_size = self.model.cfg.d_model
 
         # if the buffer is on the cpu, pin it to memory for faster transfer to the gpu
-        pin_memory = cfg.buffer_device == "cpu"
+        pin_memory = cfg.buffer_device == 'cpu'
 
         # the buffer to store activations in, with shape (size, len(layers), len(act_sites), act_size)
         self.act_buffer = torch.zeros(
