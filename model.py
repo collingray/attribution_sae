@@ -9,20 +9,20 @@ import torch.nn.functional as F
 class AttributionSAEConfig:
     n_dim: int
     m_dim: int
-    device: torch.device = torch.cuda
-    dtype: torch.dtype = torch.bfloat16
+    device: torch.device
+    dtype: torch.dtype
 
 
 class AttributionSAE(nn.Module):
     def __init__(self, cfg: AttributionSAEConfig, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
         self.cfg = cfg
 
         self.W_e = nn.Linear(cfg.n_dim, cfg.m_dim, bias=False, device=cfg.device, dtype=cfg.dtype)
         self.b_e = nn.Parameter(torch.zeros(cfg.m_dim, device=cfg.device, dtype=cfg.dtype))
         self.W_d = nn.Linear(cfg.m_dim, cfg.n_dim, bias=False, device=cfg.device, dtype=cfg.dtype)
         self.b_d = nn.Parameter(torch.zeros(cfg.n_dim, device=cfg.device, dtype=cfg.dtype))
-
-        super().__init__(*args, **kwargs)
 
     def encode(self, x):
         return F.relu(self.W_e(x) + self.b_e)
