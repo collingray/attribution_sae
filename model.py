@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import json
 
 
 @dataclass
@@ -33,3 +34,16 @@ class AttributionSAE(nn.Module):
     def forward(self, x):
         f = self.encode(x)
         return self.decode(f), f
+
+    def save(self, name, path='.'):
+        with open(f"{path}/{name}.cfg", 'w') as f:
+            json.dump(self.cfg.__dict__, f)
+
+        torch.save(self.state_dict(), f"{path}/{name}.pt")
+
+    @classmethod
+    def load(cls, name, path='.'):
+        cfg = json.load(open(f"{path}/{name}.cfg"))
+        model = cls(cfg)
+        model.load_state_dict(torch.load(path))
+        return model
