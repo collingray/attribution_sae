@@ -5,13 +5,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 import json
 
+import utils
+
 
 @dataclass
 class AttributionSAEConfig:
     n_dim: int
     m_dim: int
-    device: torch.device
-    dtype: torch.dtype
+    device: str
+    dtype: str
 
 
 class AttributionSAE(nn.Module):
@@ -20,10 +22,12 @@ class AttributionSAE(nn.Module):
 
         self.cfg = cfg
 
-        self.W_e = nn.Linear(cfg.n_dim, cfg.m_dim, bias=False, device=cfg.device, dtype=cfg.dtype)
-        self.b_e = nn.Parameter(torch.zeros(cfg.m_dim, device=cfg.device, dtype=cfg.dtype))
-        self.W_d = nn.Linear(cfg.m_dim, cfg.n_dim, bias=False, device=cfg.device, dtype=cfg.dtype)
-        self.b_d = nn.Parameter(torch.zeros(cfg.n_dim, device=cfg.device, dtype=cfg.dtype))
+        dtype = utils.TORCH_DTYPES[cfg.dtype]
+
+        self.W_e = nn.Linear(cfg.n_dim, cfg.m_dim, bias=False, device=cfg.device, dtype=dtype)
+        self.b_e = nn.Parameter(torch.zeros(cfg.m_dim, device=cfg.device, dtype=dtype))
+        self.W_d = nn.Linear(cfg.m_dim, cfg.n_dim, bias=False, device=cfg.device, dtype=dtype)
+        self.b_d = nn.Parameter(torch.zeros(cfg.n_dim, device=cfg.device, dtype=dtype))
 
     def encode(self, x):
         return F.relu(self.W_e(x) + self.b_e)
@@ -44,6 +48,7 @@ class AttributionSAE(nn.Module):
     @classmethod
     def load(cls, name, path='.'):
         cfg = json.load(open(f"{path}/{name}.cfg"))
+        cfg = AttributionSAEConfig(**cfg)
         model = cls(cfg)
-        model.load_state_dict(torch.load(path))
+        model.load_state_dict(torch.load(f"{path}/{name}.pt"))
         return model
