@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 from tqdm.autonotebook import tqdm
 from transformer_lens import HookedTransformer
 
+from utils import TORCH_DTYPES
 
 class GradBufferConfig:
     def __init__(
@@ -73,7 +74,7 @@ class GradBufferConfig:
         self.shuffle_buffer = shuffle_buffer
         self.seed = seed
         self.device = device
-        self.dtype = dtype
+        self.dtype = TORCH_DTYPES[dtype] if isinstance(dtype, str) else dtype
         self.buffer_device = buffer_device or device
         self.offload_device = offload_device
         self.refresh_progress = refresh_progress
@@ -184,9 +185,11 @@ class GradBuffer:
                 max_length=self.cfg.max_seq_length
             ).to(self.cfg.device)['input_ids']
 
+            self.model.zero_grad()
+
             # run the seqs through the model to get the activations
             # out - [batch, pos, n_vocab]
-            out, cache = self.model.run_with_cache(seqs, stop_at_layer=self.cfg.final_layer + 1, names_filter=self.cfg.act_names)
+            out, cache = self.model.run_with_cache(seqs, names_filter=self.cfg.act_names)
 
             # compute gradients w.r.t. the model's loss
             input = out[:, :-1].flatten(0, 1)
